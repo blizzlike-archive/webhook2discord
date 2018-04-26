@@ -5,11 +5,31 @@ local base64 = require('base64')
 
 local travis = {}
 
+function travis.get_key(self)
+  local fd = io.open('/tmp/travis.key', 'r')
+  local key = nil
+  local err = nil
+  if fd then
+    key = fd:read('*a')
+    fd:close()
+  else
+    key, err = travis:req_travis_key()
+    if key then
+      fd = io.open('/tmp/travis.key', 'w')
+      if fd then
+        fd:write(key)
+        fd:close()
+      end
+    end
+    return key, err
+  end
+end
+
 function travis.forward(self, data)
   local webhook = os.getenv('DISCORD_WEBHOOK_URL')
   if not webhook then
     local err = 'missing webhook url'
-    ngx.log(ngx.STDERR, 'travis:' .. err)
+    ngx.log(ngx.STDERR, 'travis: ' .. err)
     return ngx.HTTP_INTERNAL_SERVER_ERROR, { reason = err }
   end
 
@@ -52,7 +72,7 @@ function travis.forward(self, data)
   return ngx.HTTP_INTERNAL_SERVER_ERROR, { reason = err }
 end
 
-function travis.req_travis_key()
+function travis.req_travis_key(self)
   local req = http:new()
   local _, code, _, _, body = req:request({
     url = 'https://api.travis-ci.org/config',
@@ -73,7 +93,7 @@ end
 
 function travis.recv_webhook(self)
   ngx.req.read_body()
-  local body = ngx.var.request_body
+  local body = ngx.req.get_post_args().payload
 
   local headers = ngx.req.get_headers()
   if not headers['Signature'] then
@@ -84,13 +104,13 @@ function travis.recv_webhook(self)
 
   local key, err = travis:req_travis_key()
   if not key then
-    ngx.log(ngx.STDERR, 'travis:' .. err)
+    ngx.log(ngx.STDERR, 'travis: ' .. err)
     return ngx.HTTP_INTERNAL_SERVER_ERROR, { reason = err }
   end
 
   local verify, err = travis:verify_req(body, headers['Signature'], key)
   if not verify then
-    ngx.log(ngx.STDERR, 'travis:' .. err)
+    ngx.log(ngx.STDERR, 'travis: ' .. err)
     return ngx.HTTP_FORBIDDEN, { reason = err }
   end
 
