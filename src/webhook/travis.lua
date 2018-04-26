@@ -10,11 +10,13 @@ function travis.get_key(self)
   local key = nil
   local err = nil
   if fd then
+    ngx.log(ngx.STDERR, 'travis: read key from cache')
     key = fd:read('*a')
     fd:close()
   else
     key, err = travis:req_travis_key()
     if key then
+      ngx.log(ngx.STDERR, 'travis: write key to cache')
       fd = io.open('/tmp/travis.key', 'w')
       if fd then
         fd:write(key)
@@ -102,7 +104,7 @@ function travis.recv_webhook(self)
     return ngx.HTTP_FORBIDDEN, { reason = err }
   end
 
-  local key, err = travis:req_travis_key()
+  local key, err = travis:get_key()
   if not key then
     ngx.log(ngx.STDERR, 'travis: ' .. err)
     return ngx.HTTP_INTERNAL_SERVER_ERROR, { reason = err }
@@ -127,7 +129,11 @@ end
 function travis.verify_req(self, body, b64signature, key)
   -- see https://docs.travis-ci.com/user/notifications/#Verifying-Webhook-requests
   local signature = base64.decode(b64signature)
-  local pubkey = rsa:new({ public_key = key, algorithm = 'SHA1' })
+  local pubkey = rsa:new({
+    public_key = key,
+    key_type = rsa.KEY_TYPE.PKCS8,
+    algorithm = 'SHA1'
+  })
   if not pubkey then return nil, 'cannot read pubkey' end
   local verify = pubkey:verify(body, signature)
   if not verify then return nil, 'cannot verify signature' end
