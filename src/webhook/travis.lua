@@ -1,5 +1,6 @@
 local http = require('resty.http')
-local rsa = require('resty.rsa')
+local pkey = require('openssl.pkey')
+local digest = require('openssl.digest')
 local cjson = require('cjson')
 local base64 = require('base64')
 
@@ -23,8 +24,8 @@ function travis.get_key(self)
         fd:close()
       end
     end
-    return key, err
   end
+  return key, err
 end
 
 function travis.forward(self, data)
@@ -129,13 +130,13 @@ end
 function travis.verify_req(self, body, b64signature, key)
   -- see https://docs.travis-ci.com/user/notifications/#Verifying-Webhook-requests
   local signature = base64.decode(b64signature)
-  local pubkey = rsa:new({
-    public_key = key,
-    key_type = rsa.KEY_TYPE.PKCS8,
-    algorithm = 'SHA1'
-  })
+  local pubkey = pkey.new({ type = 'RSA' })
+  pubkey:setPublicKey(key, 'PEM')
+  local payload = digest.new('sha1')
+  payload:update(body)
+
   if not pubkey then return nil, 'cannot read pubkey' end
-  local verify = pubkey:verify(body, signature)
+  local verify = pubkey:verify(signature, payload)
   if not verify then return nil, 'cannot verify signature' end
 
   return true
