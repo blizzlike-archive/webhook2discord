@@ -13,12 +13,14 @@ function travis.forward(self, data)
     return ngx.HTTP_INTERNAL_SERVER_ERROR, { reason = err }
   end
 
-  local content = '```Markdown\n' ..
-    '# ' .. data.type .. ' to ' .. data.branch .. ': ' .. data.status_message .. '\n\n' ..
-    data.message .. '\n' ..
-    '```\n' ..
-    data.build_url
-
+  local color = 0x000000
+  if data.status_message == 'Passed' then color = 0x00ff00 end
+  if data.status_message == 'Fixed' then color = 0x00ff00 end
+  if data.status_message == 'Broken' then color = 0xff0000 end
+  if data.status_message == 'Failed' then color = 0xff0000 end
+  if data.status_message == 'Still Failed' then color = 0xff0000 end
+  if data.status_message == 'Errored' then color = 0xff0000 end
+  
   local req = http:new()
   local _, code, _, _, body = req:request({
     url = webhook,
@@ -28,7 +30,13 @@ function travis.forward(self, data)
       ['Content-Type'] = 'application/json'
     },
     body = cjson.encode({
-      content = content,
+      embed = {
+        title = data.type .. ' to ' .. data.branch,
+        description = data.status_message,
+        url = data.build_url,
+        author = data.author_name,
+        color = color
+      },
       username = 'travis',
       avatar_url = os.getenv('DISCORD_AVATAR_URL') or nil
     })
