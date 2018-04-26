@@ -30,15 +30,16 @@ function travis.forward(self, data)
       ['Content-Type'] = 'application/json'
     },
     body = cjson.encode({
-      embed = {
+      embeds = {{
         title = data.type .. ' to ' .. data.branch,
         description = data.status_message,
-        url = data.build_url,
-        author = data.author_name,
+        author = {
+          name = data.author_name,
+          url = data.build_url,
+        },
         color = color
-      },
-      username = 'travis',
-      avatar_url = os.getenv('DISCORD_AVATAR_URL') or nil
+      }},
+      username = 'travis'
     })
   })
 
