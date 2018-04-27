@@ -54,15 +54,18 @@ function travis.forward(self, data)
     },
     body = cjson.encode({
       embeds = {{
-        title = data.type .. ' to ' .. data.branch,
-        description = data.status_message,
+        title = '[' .. data.repository.name .. ':' .. data.branch .. ']' .. data.type,
+        url = data.build_url,
+        description = data.message,
         author = {
-          name = data.author_name,
-          url = data.build_url,
+          name = data.author_name
         },
         color = color
       }},
-      username = 'travis'
+      username = 'travis',
+      footer = {
+        text = data.state
+      }
     })
   })
 
