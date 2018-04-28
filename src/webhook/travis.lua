@@ -99,7 +99,12 @@ end
 
 function travis.recv_webhook(self)
   ngx.req.read_body()
-  local body = ngx.req.get_post_args().payload
+  local body = (ngx.req.get_post_args() or {}).payload
+  if not body then
+    local err = 'empty/truncated body'
+    ngx.log(ngx.STDERR, 'travis: ' .. err)
+    return ngx.HTTP_BAD_REQUEST, { reason = err }
+  end
 
   local headers = ngx.req.get_headers()
   if not headers['Signature'] then
