@@ -1,24 +1,18 @@
-# webhook2discord
+# Moved to GitLab
 
-this is a wrapper for the [discord webhook api](https://discordapp.com/).
-At the moment discord only supports a few services like github for their webhooks.
-This peace of software wraps the [travis](https://travis-ci.org) webhook body to a generic
-`embed object` and forwards it to the configured webhook address.
+Due to the recent circumstances where GitHub has been acquired by Microsoft, 
+I have decided to leave this place. There can't be any better time to move 
+to an open-source project (at least one where most parts are) rather than 
+staying and by that supporting Microsoft to build up yet another monopoly 
+based on a closed-source software.
 
-## install
+**This repository is now hosted on [GitLab](https://gitlab.com/blizzlike-org)**
 
-    docker pull blizzlike/webhook2discord:stable
-    docker run \
-      --name w2d -d \
-      -p 8085:80/tcp \
-      -e DISCORD_WEBHOOK_URL="<your-discord-webhook-link>" blizzlike/webhook2discord:stable ./run.sh
+We already live in a world almost exclusively controlled by closed software.
+I hope as many people as possible will follow, in order to build up a 
+new open-source standard of git hosting. I believe that all developers 
+(especially open-source developers) should understand this point of view.
 
-the travis webhook provides a public key to verify the request body with the `Signature` header.
+I highly appreciate anyone who takes the opportunity and does the same.
 
-## usage
-
-    # .travis.yml
-    notifications:
-      webhooks:
-        urls:
-          - http://<fqdn>:8085/v1/travis
+See you on GitLab
